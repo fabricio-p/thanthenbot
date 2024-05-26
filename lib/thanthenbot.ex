@@ -40,28 +40,24 @@ defmodule Thanthenbot do
   end
 
   @impl GenServer
-  def handle_info({:event, event}, state) do
-    Task.start_link(fn ->
-      __MODULE__.handle_event(event, state)
-    end)
+  def handle_info({:event, {:GUILD_CREATE, guild, _ws_state}}, state) do
 
-    {:noreply, state}
+    {:noreply,
+     Enum.reduce(guild.channels, state, fn {_channel_id, channel}, state ->
+       update_report_channel(channel, state)
+     end)}
   end
 
-  def handle_event(x) do
-    Logger.debug("Unhandled event: #{inspect(x)}")
-    :noop
-  end
+  @impl GenServer
+  def handle_info({:event, {:CHANNEL_CREATE, channel, _ws_state}}, state),
+    do: {:noreply, update_report_channel(channel, state)}
 
-  def handle_event(_, _)
+  @impl GenServer
+  def handle_info({:event, {:CHANNEL_UPDATE, channel, _ws_state}}, state),
+    do: {:noreply, update_report_channel(channel, state)}
 
-  def handle_event({:CHANNEL_CREATE, channel, _ws_state}, state),
-    do: update_report_channel(state, channel)
-
-  def handle_event({:CHANNEL_UPDATE, channel, _ws_state}, state),
-    do: update_report_channel(state, channel)
-
-  def handle_event({:CHANNEL_DELETE, channel, _ws_state}, state) do
+  @impl GenServer
+  def handle_info({:event, {:CHANNEL_DELETE, channel, _ws_state}}, state) do
     state =
       if channel.name == "stupid-corner" do
         %{
@@ -77,6 +73,22 @@ defmodule Thanthenbot do
 
     {:noreply, state}
   end
+
+  @impl GenServer
+  def handle_info({:event, event}, state) do
+    Task.start_link(fn ->
+      __MODULE__.handle_event(event, state)
+    end)
+
+    {:noreply, state}
+  end
+
+  def handle_event(x) do
+    Logger.debug("Unhandled event: #{inspect(x)}")
+    :noop
+  end
+
+  def handle_event(_, _)
 
   def handle_event(
         {:MESSAGE_CREATE, %Message{author: %User{id: author_id}}, _ws_state},
@@ -132,23 +144,23 @@ defmodule Thanthenbot do
     end
   end
 
-  def handle_event(_, _), do: :noop
+  def handle_event(event, _) do
+    Logger.debug("Unhandled event: #{inspect(event)}")
+    :noop
+  end
 
-  defp update_report_channel(state, channel) do
-    state =
-      if channel.name == "stupid-corner" do
-        %__MODULE__{
-          state
-          | report_channel_map: %{
-              state.report_channel_map
-              | channel.guild_id => channel.id
-            }
-        }
-      else
+  defp update_report_channel(channel, state) do
+    if channel.name == "stupid-corner" do
+      Logger.debug("Found #stupid-corner: #{inspect(channel, pretty: true)}")
+
+      %__MODULE__{
         state
-      end
-
-    {:noreply, state}
+        | report_channel_map:
+            Map.put(state.report_channel_map, channel.guild_id, channel.id)
+      }
+    else
+      state
+    end
   end
 
   defp process_message(content, serving) when is_binary(content) do
