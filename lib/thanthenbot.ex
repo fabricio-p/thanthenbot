@@ -2,15 +2,21 @@ defmodule Thanthenbot do
   @moduledoc """
   Documentation for `Thanthenbot`.
   """
-  # Nostrum.Consumer
   use GenServer
 
   require Logger
 
   alias Nostrum.ConsumerGroup
   alias Nostrum.Api
-  alias Nostrum.Struct.{Message, Channel, User, Guild}
-  alias Nostrum.Cache.{Me, GuildCache}
+  alias Nostrum.Struct.{Message, Channel, User}
+
+  defstruct [:serving, :id, report_channel_map: %{}]
+
+  @type t :: %Thanthenbot{
+          serving: Nx.Serving.t(),
+          id: User.id(),
+          report_channel_map: %{Guid.id() => Channel.id()}
+        }
 
   @keyword_regex ~r/(^|\W)(than|then)($|\W)/
   @keyword_length 4
@@ -29,21 +35,54 @@ defmodule Thanthenbot do
   @impl GenServer
   def init(serving) do
     ConsumerGroup.join(self())
-    {:ok, serving}
+    state = %__MODULE__{serving: serving, id: Api.get_current_user!().id}
+    {:ok, state}
   end
 
   @impl GenServer
-  def handle_info({:event, event}, serving) do
+  def handle_info({:event, event}, state) do
     Task.start_link(fn ->
-      __MODULE__.handle_event(event, serving)
+      __MODULE__.handle_event(event, state)
     end)
 
-    {:noreply, serving}
+    {:noreply, state}
   end
 
-  def handle_event(_), do: :noop
+  def handle_event(x) do
+    Logger.debug("Unhandled event: #{inspect(x)}")
+    :noop
+  end
 
   def handle_event(_, _)
+
+  def handle_event({:CHANNEL_CREATE, channel, _ws_state}, state),
+    do: update_report_channel(state, channel)
+
+  def handle_event({:CHANNEL_UPDATE, channel, _ws_state}, state),
+    do: update_report_channel(state, channel)
+
+  def handle_event({:CHANNEL_DELETE, channel, _ws_state}, state) do
+    state =
+      if channel.name == "stupid-corner" do
+        %{
+          state
+          | report_channel_map:
+              Map.delete(state.report_channel_map, channel.guild_id)
+        }
+      else
+        state
+      end
+
+    Logger.debug(inspect(state, pretty: true))
+
+    {:noreply, state}
+  end
+
+  def handle_event(
+        {:MESSAGE_CREATE, %Message{author: %User{id: author_id}}, _ws_state},
+        %__MODULE__{id: author_id}
+      ),
+      do: :noop
 
   def handle_event(
         {:MESSAGE_CREATE,
@@ -54,55 +93,65 @@ defmodule Thanthenbot do
            guild_id: guild_id
          } =
            msg, _ws_state},
-        serving
+        %__MODULE__{serving: serving} = state
       ) do
     Logger.debug("Message content: #{inspect(content)}")
 
-    unless author.id == Me.get().id do
-      case process_message(content, serving) do
-        nil ->
-          :ignore
+    case process_message(content, serving) do
+      nil ->
+        :ignore
 
-        corrections ->
-          Logger.debug(corrections: corrections)
+      corrections ->
+        Logger.debug(corrections: corrections)
 
-          %Guild{channels: channels} = GuildCache.get!(guild_id)
+        channel_id =
+          Map.get(
+            state.report_channel_map,
+            guild_id,
+            source_channel_id
+          )
 
-          {channel_id, _} =
-            channels
-            |> Map.to_list()
-            |> Enum.find(
-              {source_channel_id, nil},
-              fn {_id, %Channel{name: name}} ->
-                name == "stupid-corner"
-              end
-            )
+        correction_messages =
+          Enum.map(corrections, fn {offset, correct} ->
+            "- [offset: #{offset}] should use \"#{correct}\""
+          end)
 
-          correction_messages =
-            Enum.map(corrections, fn {offset, correct} ->
-              "  at #{offset}, should use #{correct}"
-            end)
+        full_message =
+          Enum.join(
+            [
+              "# THAN/THEN MISUSE DETECTED!!!!\n" <>
+                "- message: #{Message.to_url(msg)}\n" <>
+                "- author: #{User.mention(author)}\n" <>
+                "Corrections:"
+              | correction_messages
+            ],
+            "\n"
+          )
 
-          full_message =
-            Enum.join(
-              [
-                "than/then misuse detected at message " <>
-                  "[#{Message.to_url(msg)}], channel " <>
-                  "[#{Channel.mention(channels[source_channel_id])}] from " <>
-                  "[#{User.mention(author)}]. Corrections are as follows:"
-                | correction_messages
-              ],
-              "\n"
-            )
-
-          Api.create_message(channel_id, full_message)
-      end
+        Api.create_message(channel_id, full_message)
     end
   end
 
   def handle_event(_, _), do: :noop
 
-  def process_message(content, serving) when is_binary(content) do
+  defp update_report_channel(state, channel) do
+    state =
+      if channel.name == "stupid-corner" do
+        %__MODULE__{
+          state
+          | report_channel_map: %{
+              state.report_channel_map
+              | channel.guild_id => channel.id
+            }
+        }
+      else
+        state
+      end
+
+    {:noreply, state}
+  end
+
+  defp process_message(content, serving) when is_binary(content) do
     occurrence_offsets =
       @keyword_regex
       |> Regex.scan(content, return: :index)
@@ -139,7 +188,6 @@ defmodule Thanthenbot do
           case current_word do
             "then" when than_score > then_score -> {middle, "than"}
             "than" when then_score > than_score -> {middle, "then"}
-            _ -> nil
           end
         end
 
