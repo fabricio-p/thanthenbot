@@ -43,7 +43,6 @@ defmodule ThanthenbotWeb do
         layouts: [html: ThanthenbotWeb.Layouts]
 
       import Plug.Conn
-      import ThanthenbotWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +84,6 @@ defmodule ThanthenbotWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import ThanthenbotWeb.CoreComponents
-      import ThanthenbotWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

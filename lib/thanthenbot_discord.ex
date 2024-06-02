@@ -1,6 +1,6 @@
-defmodule Thanthenbot.DiscordClient do
+defmodule ThanthenbotDiscord do
   @moduledoc """
-  Documentation for `Thanthenbot.DiscordClient`.
+  Documentation for `ThanthenbotDiscord`.
   """
   use GenServer
 
@@ -16,11 +16,12 @@ defmodule Thanthenbot.DiscordClient do
   @type t :: %__MODULE__{
           serving: Nx.Serving.t(),
           id: User.id(),
-          report_channel_map: %{Guid.id() => Channel.id()}
+          report_channel_map: %{Guild.id() => Channel.id()}
         }
 
   @keyword_regex ~r/(^|\W)(than|then)($|\W)/
   @keyword_length 4
+  @report_channel_names ~w[stupid-corner]
 
   def start_link(opts) do
     {:ok, model_info} =
@@ -79,7 +80,7 @@ defmodule Thanthenbot.DiscordClient do
   @impl GenServer
   def handle_info({:event, {:CHANNEL_DELETE, channel, _ws_state}}, state) do
     state =
-      if channel.name == "stupid-corner" do
+      if channel.name in @report_channel_names do
         %__MODULE__{
           state
           | report_channel_map:
@@ -179,8 +180,8 @@ defmodule Thanthenbot.DiscordClient do
   end
 
   defp update_report_channel(channel, state) do
-    if channel.name == "stupid-corner" do
-      Logger.debug("Found #stupid-corner: #{inspect(channel, pretty: true)}")
+    if channel.name in @report_channel_names do
+      Logger.debug("Found ##{channel.name}: #{inspect(channel, pretty: true)}")
 
       %__MODULE__{
         state

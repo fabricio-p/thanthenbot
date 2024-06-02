@@ -13,10 +13,8 @@ defmodule Thanthenbot.Application do
       {DNSCluster,
        query: Application.get_env(:thanthenbot, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Thanthenbot.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: Thanthenbot.Finch},
-      # Start a worker by calling: Thanthenbot.DiscordClient.start_link(arg)
-      Thanthenbot.DiscordClient,
+      # Start the discord bot client
+      ThanthenbotDiscord,
       # Start to serve requests, typically the last entry
       ThanthenbotWeb.Endpoint
     ]
