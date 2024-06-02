@@ -1,0 +1,32 @@
+<section class="min-w-fit">
+  <div class="flex items-center flex-col">
+    <h1 class="text-5xl font-bold pb-7">Wall of Shame</h1>
+    <table class="min-w-fit mx-auto border-collapse border-spacing-[20px] border-2 border-black border-solid">
+      <thead>
+        <th>Guild ID</th>
+        <th>Channel ID</th>
+        <th>Message ID</th>
+        <th>Author ID</th>
+        <th>Author</th>
+        <th>Message</th>
+      </thead>
+      <tbody>
+        <tr class="text-sm" :for={%{
+          guild_id: guild_id,
+          channel_id: channel_id,
+          message_id: message_id,
+          author_id: author_id,
+          author_name: author_name,
+          content: message
+        } <- @entries}>
+          <td><%= guild_id %></td>
+          <td><%= channel_id %></td>
+          <td><%= message_id %></td>
+          <td><%= author_id %></td>
+          <td><%= author_name %></td>
+          <td><%= message %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

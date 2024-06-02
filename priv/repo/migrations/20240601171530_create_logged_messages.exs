@@ -3,11 +3,12 @@ defmodule Thanthenbot.Repo.Migrations.CreateLoggedMessages do
 
   def change do
     create table(:logged_messages) do
-      add :author_id, :integer
-      add :message_id, :integer
-      add :guild_id, :integer
-      add :channel_id, :integer
-      add :message_content, :string
+      add :author_id, :string
+      add :message_id, :string
+      add :guild_id, :string
+      add :channel_id, :string
+      add :content, :string
+      add :author_name, :string
 
       timestamps(type: :utc_datetime)
     end

@@ -3,11 +3,12 @@ defmodule Thanthenbot.Message do
   import Ecto.Changeset
 
   schema "logged_messages" do
-    field :message_content, :string
-    field :author_id, :integer
-    field :message_id, :integer
-    field :guild_id, :integer
-    field :channel_id, :integer
+    field :author_id, :string
+    field :message_id, :string
+    field :guild_id, :string
+    field :channel_id, :string
+    field :content, :string
+    field :author_name, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -15,7 +16,21 @@ defmodule Thanthenbot.Message do
   @doc false
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:author_id, :message_id, :guild_id, :channel_id, :message_content])
-    |> validate_required([:author_id, :message_id, :guild_id, :channel_id, :message_content])
+    |> cast(attrs, [
+      :author_id,
+      :message_id,
+      :guild_id,
+      :channel_id,
+      :content,
+      :author_name
+    ])
+    |> validate_required([
+      :author_id,
+      :message_id,
+      :guild_id,
+      :channel_id,
+      :content,
+      :author_name
+    ])
   end
 end

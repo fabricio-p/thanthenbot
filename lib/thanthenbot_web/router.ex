@@ -19,7 +19,7 @@ defmodule ThanthenbotWeb.Router do
 
     get "/", PageController, :home
 
-    get "/stats", StatsController, :index
+    get "/logs", LogsController, :index
   end
 
   # Other scopes may use custom stacks.

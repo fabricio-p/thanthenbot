@@ -8,7 +8,8 @@ defmodule Thanthenbot.DiscordClient do
 
   alias Nostrum.ConsumerGroup
   alias Nostrum.Api
-  alias Nostrum.Struct.{Message, Channel, User}
+  alias Nostrum.Struct.{Message, Channel, User, Guild}
+  alias Thanthenbot.Repo
 
   defstruct [:serving, :id, report_channel_map: %{}]
 
@@ -28,7 +29,7 @@ defmodule Thanthenbot.DiscordClient do
     {:ok, tokenizer} =
       Bumblebee.load_tokenizer({:hf, "google-bert/bert-base-uncased"})
 
-    serving = Bumblebee.Text.fill_mask(model_info, tokenizer)
+    serving = Bumblebee.Text.fill_mask(model_info, tokenizer, top_k: 10)
     GenServer.start_link(__MODULE__, serving, opts)
   end
 
@@ -135,6 +136,15 @@ defmodule Thanthenbot.DiscordClient do
       corrections ->
         Logger.debug(corrections: corrections)
 
+        log_message(
+          content,
+          msg.id,
+          guild_id,
+          source_channel_id,
+          author.id,
+          author.username
+        )
+
         channel_id =
           Map.get(
             state.report_channel_map,
@@ -182,7 +192,7 @@ defmodule Thanthenbot.DiscordClient do
     end
   end
 
-  defp process_message(content, serving) when is_binary(content) do
+  def process_message(content, serving) when is_binary(content) do
     occurrence_offsets =
       @keyword_regex
       |> Regex.scan(content, return: :index)
@@ -246,5 +256,36 @@ defmodule Thanthenbot.DiscordClient do
         _ -> {than_score, then_score}
       end
     end)
+  end
+
+  # @spec log_message(
+  #         String.t(),
+  #         Message.id(),
+  #         Guild.id(),
+  #         Channel.id(),
+  #         User.id(),
+  #         String.t()
+  #       ) :: {:ok, Ecto.Schema.t()} | no_return()
+  defp log_message(
+         content,
+         message_id,
+         guild_id,
+         channel_id,
+         author_id,
+         author_name
+       ) do
+    message = %Thanthenbot.Message{
+      content: content,
+      author_id: to_string(author_id),
+      message_id: to_string(message_id),
+      guild_id: to_string(guild_id),
+      channel_id: to_string(channel_id),
+      author_name: author_name
+    }
+
+    case Repo.insert(message) do
+      {:ok, struct} -> struct
+      {:error, changeset} -> raise changeset
+    end
   end
 end
