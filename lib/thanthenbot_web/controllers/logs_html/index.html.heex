@@ -11,14 +11,19 @@
         <th>Message</th>
       </thead>
       <tbody>
-        <tr class="text-sm" :for={%{
-          guild_id: guild_id,
-          channel_id: channel_id,
-          message_id: message_id,
-          author_id: author_id,
-          author_name: author_name,
-          content: message
-        } <- @entries}>
+        <tr
+          :for={
+            %{
+              guild_id: guild_id,
+              channel_id: channel_id,
+              message_id: message_id,
+              author_id: author_id,
+              author_name: author_name,
+              content: message
+            } <- @entries
+          }
+          class="text-sm"
+        >
           <td><%= guild_id %></td>
           <td><%= channel_id %></td>
           <td><%= message_id %></td>
