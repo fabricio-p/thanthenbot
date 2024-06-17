@@ -4,7 +4,7 @@ defmodule ThanthenbotWeb.LogsController do
   alias Thanthenbot.Repo
 
   def index(conn, _params) do
-    entries = Repo.all(Thanthenbot.Message)
+    entries = Thanthenbot.list_messages(%{})
     render(conn, :index, entries: entries)
   end
 end
