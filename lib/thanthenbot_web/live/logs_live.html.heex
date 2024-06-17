@@ -1,0 +1,56 @@
+<table class="min-w-fit mx-auto border-collapse border-spacing-[20px] border-2 border-black border-solid">
+  <thead>
+    <th>
+      <.live_component
+        module={ThanthenbotWeb.LogsLive.SortingComponent}
+        id="sorting-guild_id"
+        name="Guild ID"
+        key={:guild_id}
+        sorting={@sorting}
+      />
+    </th>
+    <th>
+      <.live_component
+        module={ThanthenbotWeb.LogsLive.SortingComponent}
+        id="sorting-channel_id"
+        name="Channel ID"
+        key={:channel_id}
+        sorting={@sorting}
+      />
+    </th>
+    <th>Message ID</th>
+    <th>Author ID</th>
+    <th>
+      <.live_component
+        module={ThanthenbotWeb.LogsLive.SortingComponent}
+        id="sorting-author_name"
+        name="Author"
+        key={:author_name}
+        sorting={@sorting}
+      />
+    </th>
+    <th>Message</th>
+  </thead>
+  <tbody>
+    <tr
+      :for={
+        %{
+          guild_id: guild_id,
+          channel_id: channel_id,
+          message_id: message_id,
+          author_id: author_id,
+          author_name: author_name,
+          content: message
+        } <- @message_logs
+      }
+      class="text-sm"
+    >
+      <td><%= guild_id %></td>
+      <td><%= channel_id %></td>
+      <td><%= message_id %></td>
+      <td><%= author_id %></td>
+      <td><%= author_name %></td>
+      <td><%= message %></td>
+    </tr>
+  </tbody>
+</table>

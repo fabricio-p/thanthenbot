@@ -21,12 +21,25 @@ defmodule ThanthenbotWeb do
 
   def router do
     quote do
-      use Phoenix.Router, helpers: false
+      use Phoenix.Router, helpers: true
 
       # Import common connection and controller functions to use in pipelines
       import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      # Use all HTML functionality (forms, tags, etc)
+      unquote(html_helpers())
+      import Phoenix.HTML.Form
+
+      # Import LiveView and .heex helpers (live_render, live_patch, <.form>, etc)
+      import Phoenix.LiveView.Helpers
+
+      alias ThanthenbotWeb.Router.Helpers, as: Routes
     end
   end
 
@@ -53,7 +66,7 @@ defmodule ThanthenbotWeb do
       use Phoenix.LiveView,
         layout: {ThanthenbotWeb.Layouts, :app}
 
-      unquote(html_helpers())
+      unquote(view_helpers())
     end
   end
 
@@ -61,7 +74,7 @@ defmodule ThanthenbotWeb do
     quote do
       use Phoenix.LiveComponent
 
-      unquote(html_helpers())
+      unquote(view_helpers())
     end
   end
 
