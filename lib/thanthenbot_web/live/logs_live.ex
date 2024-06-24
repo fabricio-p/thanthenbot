@@ -3,44 +3,83 @@ defmodule ThanthenbotWeb.LogsLive do
 
   require Logger
 
-  alias Thanthenbot.Message
+  alias Thanthenbot.Forms.{SortingForm, FilterForm}
 
-  def mount(_params, _session, socket) do
-    socket = assign_new(socket, :sorting, fn -> %{sort_dir: :asc} end)
+  def mount(params, _session, socket) do
+    socket = parse_params(socket, params)
+
     {:ok, socket}
   end
 
   def handle_params(params, _url, socket) do
-    sort_by = Map.get(params, "sort_by", nil)
-    sort_dir = Map.get(params, "sort_dir", nil)
-
     socket =
       socket
-      |> assign_sorting(sort_by, sort_dir)
+      |> parse_params(params)
       |> assign_logs()
 
     {:noreply, socket}
   end
 
   def handle_info({:update, opts}, socket) do
-    path = Routes.live_path(socket, __MODULE__, opts)
+    params = merge_sanitize_params(socket, opts)
+    path = Routes.live_path(socket, __MODULE__, params)
     {:noreply, push_patch(socket, to: path, replace: true)}
   end
 
-  defp assign_sorting(socket, sort_by, sort_dir)
-       when sort_by in ~w[guild_id channel_id author_name] and
-              sort_dir in ~w[asc desc] do
-    sort_by = String.to_atom(sort_by)
-    sort_dir = String.to_atom(sort_dir)
+  defp format_date(%{date: date} = assigns) do
+    string_value = to_string(date)
+    split_pattern = :binary.compile_pattern([" ", "T"])
+    [date_part, time_part] = String.split(string_value, split_pattern)
 
-    assign(socket, :sorting, %{sort_by: sort_by, sort_dir: sort_dir})
+    assigns =
+      assigns
+      |> assign(:date_part, date_part)
+      |> assign(:time_part, time_part)
+
+    ~H"""
+    <%= @date_part %><br /><%= @time_part %>
+    """
   end
 
-  defp assign_sorting(socket, _sort_by, _sort_dir), do: socket
+  defp parse_params(socket, params) do
+    with {:ok, sorting_opts} <- SortingForm.parse(params),
+         {:ok, filter_opts} <- FilterForm.parse(params) do
+      socket
+      |> assign_sorting(sorting_opts)
+      |> assign_filter(filter_opts)
+    else
+      _error ->
+        socket
+        |> assign_sorting()
+        |> assign_filter()
+    end
+  end
+
+  defp assign_sorting(socket, overrides \\ %{}) do
+    opts = Map.merge(SortingForm.default_values(), overrides)
+    assign(socket, :sorting, opts)
+  end
+
+  defp assign_filter(socket, overrides \\ %{}) do
+    opts = FilterForm.default_values(overrides)
+    assign(socket, :filter, opts)
+  end
+
+  def merge_sanitize_params(socket, overrides \\ %{}) do
+    %{sorting: sorting, filter: filter} = socket.assigns
+
+    %{}
+    |> Map.merge(sorting)
+    |> Map.merge(filter)
+    |> Map.merge(overrides)
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+    |> dbg()
+  end
 
   defp assign_logs(socket) do
-    dbg socket.assigns[:sorting]
-    message_logs = Thanthenbot.list_messages(socket.assigns[:sorting])
+    params = merge_sanitize_params(socket)
+    message_logs = Thanthenbot.list_messages(params)
     assign(socket, :message_logs, message_logs)
   end
 end

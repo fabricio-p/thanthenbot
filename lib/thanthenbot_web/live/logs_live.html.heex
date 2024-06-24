@@ -1,56 +1,96 @@
-<table class="min-w-fit mx-auto border-collapse border-spacing-[20px] border-2 border-black border-solid">
-  <thead>
-    <th>
-      <.live_component
-        module={ThanthenbotWeb.LogsLive.SortingComponent}
-        id="sorting-guild_id"
-        name="Guild ID"
-        key={:guild_id}
-        sorting={@sorting}
-      />
-    </th>
-    <th>
-      <.live_component
-        module={ThanthenbotWeb.LogsLive.SortingComponent}
-        id="sorting-channel_id"
-        name="Channel ID"
-        key={:channel_id}
-        sorting={@sorting}
-      />
-    </th>
-    <th>Message ID</th>
-    <th>Author ID</th>
-    <th>
-      <.live_component
-        module={ThanthenbotWeb.LogsLive.SortingComponent}
-        id="sorting-author_name"
-        name="Author"
-        key={:author_name}
-        sorting={@sorting}
-      />
-    </th>
-    <th>Message</th>
-  </thead>
-  <tbody>
-    <tr
-      :for={
-        %{
-          guild_id: guild_id,
-          channel_id: channel_id,
-          message_id: message_id,
-          author_id: author_id,
-          author_name: author_name,
-          content: message
-        } <- @message_logs
-      }
-      class="text-sm"
-    >
-      <td><%= guild_id %></td>
-      <td><%= channel_id %></td>
-      <td><%= message_id %></td>
-      <td><%= author_id %></td>
-      <td><%= author_name %></td>
-      <td><%= message %></td>
-    </tr>
-  </tbody>
-</table>
+<section class="min-w-fit">
+  <div class="flex items-center flex-col">
+    <h1 class="text-5xl font-bold pb-7">Wall of Shame</h1>
+    <.live_component
+      module={ThanthenbotWeb.LogsLive.FilterComponent}
+      id={:filter}
+      filter={@filter}
+    />
+    <table class="
+        min-w-fit
+        mx-auto
+        border-collapse
+        border-spacing-[20px]
+        border-2
+        border-black
+        border-solid
+      ">
+      <thead>
+        <th class="min-w-20">
+          <.live_component
+            module={ThanthenbotWeb.LogsLive.SortingComponent}
+            id="sorting-id"
+            name="ID"
+            key={:id}
+            sorting={@sorting}
+          />
+        </th>
+        <th>
+          <.live_component
+            module={ThanthenbotWeb.LogsLive.SortingComponent}
+            id="sorting-inserted_at"
+            name="Date"
+            key={:inserted_at}
+            sorting={@sorting}
+          />
+        </th>
+        <th>
+          <.live_component
+            module={ThanthenbotWeb.LogsLive.SortingComponent}
+            id="sorting-guild_id"
+            name="Guild ID"
+            key={:guild_id}
+            sorting={@sorting}
+          />
+        </th>
+        <th>
+          <.live_component
+            module={ThanthenbotWeb.LogsLive.SortingComponent}
+            id="sorting-channel_id"
+            name="Channel ID"
+            key={:channel_id}
+            sorting={@sorting}
+          />
+        </th>
+        <th>Message ID</th>
+        <th>Author ID</th>
+        <th>
+          <.live_component
+            module={ThanthenbotWeb.LogsLive.SortingComponent}
+            id="sorting-author_name"
+            name="Author"
+            key={:author_name}
+            sorting={@sorting}
+          />
+        </th>
+        <th>Message</th>
+      </thead>
+      <tbody>
+        <tr
+          :for={
+            %{
+              id: id,
+              inserted_at: inserted_at,
+              guild_id: guild_id,
+              channel_id: channel_id,
+              message_id: message_id,
+              author_id: author_id,
+              author_name: author_name,
+              content: message
+            } <- @message_logs
+          }
+          class="text-sm"
+        >
+          <td class="text-right pr-5"><%= id %></td>
+          <td><.format_date date={inserted_at} /></td>
+          <td><%= guild_id %></td>
+          <td><%= channel_id %></td>
+          <td><%= message_id %></td>
+          <td><%= author_id %></td>
+          <td><%= author_name %></td>
+          <td><%= message %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

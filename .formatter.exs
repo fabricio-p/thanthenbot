@@ -7,5 +7,12 @@
     "{config,lib,test}/**/*.{heex,ex,exs}",
     "priv/*/seeds.exs"
   ],
-  line_length: 80
+  line_length: 80,
+  locals_without_parens: [
+    def: 2,
+    defp: 2,
+    defmacro: 2,
+    defmacrop: 2,
+    defmodule: 2
+  ]
 ]
