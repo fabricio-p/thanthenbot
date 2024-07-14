@@ -19,7 +19,7 @@ defmodule ThanthenbotDiscord do
           report_channel_map: %{Guild.id() => Channel.id()}
         }
 
-  @keyword_regex ~r/(^|\W)(than|then)($|\W)/
+  @keyword_regex ~r/(^|\W)(than|then)($|\W)/i
   @keyword_length 4
   @report_channel_names ~w[stupid-corner]
 

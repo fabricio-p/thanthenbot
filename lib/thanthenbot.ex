@@ -17,6 +17,20 @@ defmodule Thanthenbot do
   alias Thanthenbot.Repo
   alias Thanthenbot.Message
 
+  def list_messages_with_total_count(opts) do
+    query = from(m in Message) |> filter(opts)
+
+    total_count = Repo.aggregate(query, :count)
+
+    result =
+      query
+      |> sort(opts)
+      |> paginate(opts)
+      |> Repo.all()
+
+    %{messages: result, total_count: total_count}
+  end
+
   def list_messages(opts) do
     Logger.info(opts: opts)
 
@@ -42,6 +56,17 @@ defmodule Thanthenbot do
     |> filter_by_channel_id(opts)
   end
 
+  defp paginate(query, %{page_number: page, page_size: page_size})
+       when is_integer(page) and is_integer(page_size) do
+    offset = max(page - 1, 0) * page_size
+
+    query
+    |> limit(^page_size)
+    |> offset(^offset)
+  end
+
+  defp paginate(query, _opts), do: query
+
   defp filter_by_id(query, %{id: id}) when is_integer(id) do
     where(query, id: ^id)
   end
@@ -57,13 +82,13 @@ defmodule Thanthenbot do
   defp filter_by_author_name(query, _opts), do: query
 
   defp filter_by_guild_id(query, %{guild_id: guild_id}) do
-    where(query, id: ^guild_id)
+    where(query, guild_id: ^guild_id)
   end
 
   defp filter_by_guild_id(query, _opts), do: query
 
   defp filter_by_channel_id(query, %{channel_id: channel_id}) do
-    where(query, id: ^channel_id)
+    where(query, channel_id: ^channel_id)
   end
 
   defp filter_by_channel_id(query, _opts), do: query

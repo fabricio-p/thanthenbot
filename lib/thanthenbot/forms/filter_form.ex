@@ -32,4 +32,10 @@ defmodule Thanthenbot.Forms.FilterForm do
     {values, @fields}
     |> cast(%{}, Map.keys(@fields))
   end
+
+  def contains_filter_values?(opts) do
+    @fields
+    |> Map.keys()
+    |> Enum.any?(&Map.get(opts, &1))
+  end
 end

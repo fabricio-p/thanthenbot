@@ -21,7 +21,9 @@ defmodule Thanthenbot.Forms.SortingForm do
     |> apply_action(:insert)
   end
 
-  def default_values(), do: @default_values
+  def default_values(overrides \\ %{}) do
+    Map.merge(@default_values, overrides)
+  end
 
   # def variants(:sort_by), do: @sort_by_variants
   # def variants(:sort_dir), do: @sort_dir_variants

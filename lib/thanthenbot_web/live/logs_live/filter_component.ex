@@ -25,19 +25,15 @@ defmodule ThanthenbotWeb.LogsLive.FilterComponent do
           <.input type="number" field={@form[:id]} label="ID" class="bg-teal-500" />
           <.input type="text" field={@form[:author_name]} label="Author" />
           <.input
-            type="number"
+            type="text"
             field={@form[:guild_id]}
             label="Guild ID"
-            minlength={19}
-            maxlength={19}
             autocomplete="off"
           />
           <.input
-            type="number"
+            type="text"
             field={@form[:channel_id]}
             label="Channel ID"
-            minlength={19}
-            maxlength={19}
             autocomplete="off"
           />
         </div>
@@ -70,8 +66,7 @@ defmodule ThanthenbotWeb.LogsLive.FilterComponent do
   end
 
   def handle_event("search-toggle", _, socket) do
-    {:noreply, socket}
-    {:noreply, assign(socket, :show_form, not socket.assigns[:show_form])}
+    {:noreply, update(socket, :show_form, &not/1)}
   end
 
   def handle_event("search", %{"filter" => filter}, socket) do

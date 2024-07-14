@@ -3,7 +3,7 @@ defmodule ThanthenbotWeb.LogsLive do
 
   require Logger
 
-  alias Thanthenbot.Forms.{SortingForm, FilterForm}
+  alias Thanthenbot.Forms.{SortingForm, FilterForm, PaginationForm}
 
   def mount(params, _session, socket) do
     socket = parse_params(socket, params)
@@ -43,20 +43,23 @@ defmodule ThanthenbotWeb.LogsLive do
 
   defp parse_params(socket, params) do
     with {:ok, sorting_opts} <- SortingForm.parse(params),
-         {:ok, filter_opts} <- FilterForm.parse(params) do
+         {:ok, filter_opts} <- FilterForm.parse(params),
+         {:ok, pagination_opts} <- PaginationForm.parse(params) do
       socket
       |> assign_sorting(sorting_opts)
       |> assign_filter(filter_opts)
+      |> assign_pagination(pagination_opts)
     else
       _error ->
         socket
         |> assign_sorting()
         |> assign_filter()
+        |> assign_pagination()
     end
   end
 
   defp assign_sorting(socket, overrides \\ %{}) do
-    opts = Map.merge(SortingForm.default_values(), overrides)
+    opts = SortingForm.default_values(overrides)
     assign(socket, :sorting, opts)
   end
 
@@ -65,21 +68,47 @@ defmodule ThanthenbotWeb.LogsLive do
     assign(socket, :filter, opts)
   end
 
+  def assign_pagination(socket, overrides \\ %{}) do
+    opts = PaginationForm.default_values(overrides)
+    assign(socket, :pagination, opts)
+  end
+
   def merge_sanitize_params(socket, overrides \\ %{}) do
-    %{sorting: sorting, filter: filter} = socket.assigns
+    %{sorting: sorting, filter: filter, pagination: pagination} = socket.assigns
+    overrides = maybe_reset_pagination(overrides)
 
     %{}
     |> Map.merge(sorting)
     |> Map.merge(filter)
+    |> Map.merge(pagination)
     |> Map.merge(overrides)
-    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.drop([:total_count])
+    |> Enum.filter(fn {_key, value} -> value end)
     |> Map.new()
-    |> dbg()
   end
 
   defp assign_logs(socket) do
     params = merge_sanitize_params(socket)
-    message_logs = Thanthenbot.list_messages(params)
-    assign(socket, :message_logs, message_logs)
+    # message_logs = Thanthenbot.list_messages(params)
+    %{messages: message_logs, total_count: total_count} =
+      Thanthenbot.list_messages_with_total_count(params)
+
+    socket
+    |> assign(:message_logs, message_logs)
+    |> assign_total_count(total_count)
+  end
+
+  defp assign_total_count(socket, total_count) do
+    update(socket, :pagination, fn pagination ->
+      %{pagination | total_count: total_count}
+    end)
+  end
+
+  def maybe_reset_pagination(overrides) do
+    if FilterForm.contains_filter_values?(overrides) do
+      Map.put(overrides, :page, 1)
+    else
+      overrides
+    end
   end
 end

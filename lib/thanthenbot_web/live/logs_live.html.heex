@@ -1,5 +1,5 @@
 <section class="min-w-fit">
-  <div class="flex items-center flex-col">
+  <div class="flex items-center flex-col min-w-fit">
     <h1 class="text-5xl font-bold pb-7">Wall of Shame</h1>
     <.live_component
       module={ThanthenbotWeb.LogsLive.FilterComponent}
@@ -7,13 +7,9 @@
       filter={@filter}
     />
     <table class="
-        min-w-fit
-        mx-auto
-        border-collapse
-        border-spacing-[20px]
-        border-2
-        border-black
-        border-solid
+        min-w-fit mx-auto
+        border-collapse border-spacing-[20px]
+        border-2 border-black border-solid
       ">
       <thead>
         <th class="min-w-20">
@@ -82,15 +78,22 @@
           class="text-sm"
         >
           <td class="text-right pr-5"><%= id %></td>
-          <td><.format_date date={inserted_at} /></td>
+          <td class="text-nowrap"><.format_date date={inserted_at} /></td>
           <td><%= guild_id %></td>
           <td><%= channel_id %></td>
           <td><%= message_id %></td>
           <td><%= author_id %></td>
           <td><%= author_name %></td>
-          <td><%= message %></td>
+          <td class="text-wrap"><%= message %></td>
         </tr>
       </tbody>
     </table>
+    <.live_component
+      module={ThanthenbotWeb.LogsLive.PaginationComponent}
+      id={:pagination}
+      key={:pagination}
+      pagination={@pagination}
+      name="Pagination"
+    />
   </div>
 </section>
