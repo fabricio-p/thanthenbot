@@ -9,7 +9,8 @@ defmodule Thanthenbot.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [flags: ["-Wunmatched_returns", :error_handling, :underspecs]]
     ]
   end
 
@@ -32,6 +33,7 @@ defmodule Thanthenbot.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
       # the bot
       {:nostrum, "~> 0.9"},
       {:bumblebee, "~> 0.5.3"},

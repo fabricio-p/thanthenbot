@@ -97,7 +97,7 @@ defmodule ThanthenbotDiscord do
 
   @impl GenServer
   def handle_info({:event, event}, state) do
-    Task.start_link(fn ->
+    {:ok, _pid} = Task.start_link(fn ->
       __MODULE__.handle_event(event, state)
     end)
 
