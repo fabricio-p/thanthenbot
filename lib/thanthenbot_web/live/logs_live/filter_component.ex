@@ -3,7 +3,45 @@ defmodule ThanthenbotWeb.LogsLive.FilterComponent do
 
   require Logger
 
-  alias Thanthenbot.Forms.FilterForm
+  import Ecto.Changeset
+
+  @fields %{
+    id: :integer,
+    author_name: :string,
+    guild_id: :string,
+    channel_id: :string
+  }
+
+  @default_values %{
+    id: nil,
+    author_name: nil,
+    guild_id: nil,
+    channel_id: nil
+  }
+
+  def default_values(overrides \\ %{}) do
+    Map.merge(@default_values, overrides)
+  end
+
+  def parse(params) do
+    {@default_values, @fields}
+    |> cast(params, Map.keys(@fields))
+    |> validate_number(:id, greater_than_or_equal_to: 1)
+    |> validate_length(:guild_id, is: 19)
+    |> validate_length(:channel_id, is: 19)
+    |> apply_action(:insert)
+  end
+
+  def change_values(values \\ @default_values) do
+    {values, @fields}
+    |> cast(%{}, Map.keys(@fields))
+  end
+
+  def contains_filter_values?(opts) do
+    @fields
+    |> Map.keys()
+    |> Enum.any?(&Map.get(opts, &1))
+  end
 
   attr :show_form, :boolean, default: true
 
@@ -59,8 +97,9 @@ defmodule ThanthenbotWeb.LogsLive.FilterComponent do
   def update(%{filter: filter}, socket) do
     form =
       filter
-      |> FilterForm.change_values()
+      |> change_values()
       |> to_form(as: :filter)
+      |> dbg()
 
     {:ok, assign(socket, :form, form)}
   end
@@ -70,7 +109,7 @@ defmodule ThanthenbotWeb.LogsLive.FilterComponent do
   end
 
   def handle_event("search", %{"filter" => filter}, socket) do
-    case FilterForm.parse(filter) do
+    case parse(filter) do
       {:ok, opts} ->
         send(self(), {:update, opts})
         {:noreply, socket}

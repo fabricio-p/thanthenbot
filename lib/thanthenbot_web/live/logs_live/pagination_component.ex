@@ -3,13 +3,43 @@ defmodule ThanthenbotWeb.LogsLive.PaginationComponent do
 
   require Logger
 
-  alias Thanthenbot.Forms.PaginationForm
+  import Ecto.Changeset
+
+  @fields %{
+    page_number: :integer,
+    page_size: :integer,
+    total_count: :integer
+  }
+
+  @default_values %{
+    page_number: 1,
+    page_size: 20,
+    total_count: 0
+  }
+
+  def parse(params, values \\ @default_values) do
+    {values, @fields}
+    |> cast(params, Map.keys(@fields))
+    |> validate_number(:page_number, greater_than: 0)
+    |> validate_number(:page_size, greater_than: 0)
+    |> validate_number(:total_count, greater_than_or_equal_to: 0)
+    |> apply_action(:insert)
+  end
+
+  def default_values(overrides \\ %{}) do
+    Map.merge(@default_values, overrides)
+  end
+
+  def change_values(values \\ @default_values) do
+    {values, @fields}
+    |> cast(%{}, Map.keys(@fields))
+  end
 
   def render(assigns) do
     ~H"""
     <div>
       <div class="pt-5">
-        <%= for {page_number, current_page?} <- pages(@pagination) do %>
+        <%= for {page_number, current_page?} <- pages(@pagination |> dbg()) do %>
           <div
             phx-click="show-page"
             phx-value-page_number={page_number}
@@ -22,11 +52,13 @@ defmodule ThanthenbotWeb.LogsLive.PaginationComponent do
       </div>
       <div>
         <.form
+          :let={f}
           for={@pagination}
-          as={:pagination}
+          as={:page_size_form}
           phx-change="set-page-size"
           phx-target={@myself}
         >
+          <% dbg(f) %>
           <.input
             type="select"
             field={@pagination[:page_size]}
@@ -65,15 +97,15 @@ defmodule ThanthenbotWeb.LogsLive.PaginationComponent do
   end
 
   def handle_event("set-page-size", params, socket) do
-    parse_params(params, socket)
+    parse_params(params |> dbg(), socket)
   end
 
   def update(%{pagination: pagination}, socket) do
     form =
       pagination
+      |> change_values()
+      |> to_form(as: :page_size_form)
       |> dbg()
-      |> PaginationForm.change_values()
-      |> to_form(as: :pagination)
 
     {:ok, assign(socket, :pagination, pagination)}
   end
@@ -81,7 +113,7 @@ defmodule ThanthenbotWeb.LogsLive.PaginationComponent do
   def parse_params(params, socket) do
     %{pagination: pagination} = socket.assigns
 
-    case PaginationForm.parse(params, pagination) do
+    case parse(params, pagination) do
       {:ok, opts} ->
         send(self(), {:update, opts})
         {:noreply, socket}

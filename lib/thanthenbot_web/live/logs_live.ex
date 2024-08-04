@@ -3,7 +3,11 @@ defmodule ThanthenbotWeb.LogsLive do
 
   require Logger
 
-  alias Thanthenbot.Forms.{SortingForm, FilterForm, PaginationForm}
+  alias ThanthenbotWeb.LogsLive.{
+    FilterComponent,
+    PaginationComponent,
+    SortingComponent
+  }
 
   def mount(params, _session, socket) do
     socket = parse_params(socket, params)
@@ -12,6 +16,7 @@ defmodule ThanthenbotWeb.LogsLive do
   end
 
   def handle_params(params, _url, socket) do
+    dbg(params)
     socket =
       socket
       |> parse_params(params)
@@ -42,9 +47,9 @@ defmodule ThanthenbotWeb.LogsLive do
   end
 
   defp parse_params(socket, params) do
-    with {:ok, sorting_opts} <- SortingForm.parse(params),
-         {:ok, filter_opts} <- FilterForm.parse(params),
-         {:ok, pagination_opts} <- PaginationForm.parse(params) do
+    with {:ok, sorting_opts} <- SortingComponent.parse(params),
+         {:ok, filter_opts} <- FilterComponent.parse(params) |> dbg(),
+         {:ok, pagination_opts} <- PaginationComponent.parse(params) |> dbg() do
       socket
       |> assign_sorting(sorting_opts)
       |> assign_filter(filter_opts)
@@ -59,17 +64,17 @@ defmodule ThanthenbotWeb.LogsLive do
   end
 
   defp assign_sorting(socket, overrides \\ %{}) do
-    opts = SortingForm.default_values(overrides)
+    opts = SortingComponent.default_values(overrides) |> dbg()
     assign(socket, :sorting, opts)
   end
 
   defp assign_filter(socket, overrides \\ %{}) do
-    opts = FilterForm.default_values(overrides)
+    opts = FilterComponent.default_values(overrides) |> dbg()
     assign(socket, :filter, opts)
   end
 
   def assign_pagination(socket, overrides \\ %{}) do
-    opts = PaginationForm.default_values(overrides)
+    opts = PaginationComponent.default_values(overrides) |> dbg()
     assign(socket, :pagination, opts)
   end
 
@@ -105,7 +110,7 @@ defmodule ThanthenbotWeb.LogsLive do
   end
 
   def maybe_reset_pagination(overrides) do
-    if FilterForm.contains_filter_values?(overrides) do
+    if FilterComponent.contains_filter_values?(overrides) do
       Map.put(overrides, :page, 1)
     else
       overrides
